@@ -2,17 +2,11 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.core.config import JWT_ALGORITHM, JWT_EXPIRE_MINUTES, SECRET_KEY
 
 # Le dice a FastAPI que espere el token como "Bearer <token>",
 # y en /docs mostrará un simple campo de texto para pegarlo.
 seguridad = HTTPBearer()
-
-# Clave secreta usada para "firmar" los tokens.
-# Solo tu backend la conoce; nadie puede falsificar un token sin ella.
-SECRET_KEY = "546163d3a2cffcb6c6ea6f3136b565c800e0f9f4d92c466d981d29edd186020e"
-ALGORITHM = "HS256"
-MINUTOS_EXPIRACION = 60  # el token dura 1 hora, luego hay que loguearse de nuevo
-
 
 def crear_token(datos: dict) -> str:
     """
@@ -21,10 +15,10 @@ def crear_token(datos: dict) -> str:
     volver a consultar la base de datos.
     """
     datos_a_codificar = datos.copy()
-    expiracion = datetime.now(timezone.utc) + timedelta(minutes=MINUTOS_EXPIRACION)
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=JWT_EXPIRE_MINUTES)
     datos_a_codificar.update({"exp": expiracion})
 
-    token = jwt.encode(datos_a_codificar, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode(datos_a_codificar, SECRET_KEY, algorithm=JWT_ALGORITHM)
     return token
 
 
@@ -35,7 +29,7 @@ def leer_token(token: str) -> dict | None:
     Si no es válido, devuelve None.
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
         return payload
     except jwt.JWTError:
         return None

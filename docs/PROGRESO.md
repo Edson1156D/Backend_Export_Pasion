@@ -10,7 +10,7 @@
 | 1 | Base de datos | ✅ terminada | fase-1-base-de-datos | `3 passed`; upgrade local SQLite OK |
 | 2 | Auth y usuarios | ✅ terminada | fase-2-auth-usuarios | `15 passed` (Fase 0 + Fase 2) |
 | 3 | Catálogos y productos | ✅ terminada | fase-3-productos | `17 passed` (Fases 0, 2 y 3) |
-| 4 | Motor de inventario | ⬜ pendiente | | |
+| 4 | Motor de inventario | ✅ terminada | fase-4-motor-inventario | `14 passed` (`31` suite completa) |
 | 5 | Entradas, compras y mermas | ⬜ pendiente | | |
 | 6 | Ventas | ⬜ pendiente | | |
 | 7 | Movimientos | ⬜ pendiente | | |
@@ -97,3 +97,13 @@ Pendiente para fases siguientes: catálogos y productos (Fase 3), motor de inven
 - Validación: `17 passed` ejecutando la suite completa contra SQLite en memoria; la prueba de Fase 3 cubre catálogos, permisos, CRUD, duplicado de SKU, activación, historial y tipos numéricos.
 
 Pendiente para fases siguientes: motor FIFO y lotes (Fase 4), entradas/compras/mermas (Fase 5), ventas (Fase 6), movimientos (Fase 7) y comercio exterior (Fase 8). La integración con el front continúa pendiente hasta reemplazar sus servicios mock por llamadas HTTP.
+
+## Fase 4 — Motor de inventario (2026-09-28)
+
+- Se implementaron en `app/servicios/inventario.py` `round2` half-up, validaciones, costo promedio ponderado, costo de consumo y asignación FIFO con orden `received_at, id`; los errores conservan los mensajes exactos del contrato.
+- Se añadieron `ingresar_lote`, `consumir_lotes` y `sincronizar_stock_producto`. Las consultas de lotes usan `SELECT ... FOR UPDATE`, el stock y el costo derivado se sincronizan en la misma sesión, y el costo anterior se conserva cuando el stock queda en cero.
+- Los códigos se generan como `LOTE-0001`, correlativos a partir del id persistido, y se añadió `scripts/crear_aperturas.py` junto con `crear_lotes_apertura`, idempotente para productos con stock existente sin lotes.
+- Se implementaron `GET /api/v1/lotes` y `GET /api/v1/lotes/producto/{productId}` para admin/taller, con filtros, orden reciente y orden FIFO, respuesta camelCase y proveedor/responsable resueltos.
+- Se añadió `verificar_consistencia_stock` y cobertura async de apertura, consistencia, órdenes y permisos. Validación: `14 passed` de Fase 4 y `31 passed` en la suite completa.
+
+Pendiente para fases siguientes: entradas/compras/mermas (Fase 5), ventas (Fase 6), movimientos (Fase 7) y comercio exterior (Fase 8). La integración con el front continúa pendiente hasta reemplazar sus servicios mock por llamadas HTTP. La apertura debe ejecutarse con `python -m scripts.crear_aperturas` en una base real después de revisar sus datos existentes.

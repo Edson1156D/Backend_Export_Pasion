@@ -1,11 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.context import CryptContext
 
 from app.modelo.usuarios import Usuario
+from app.core.seguridad import pwd_context
 
-# Configura passlib para verificar contraseñas con bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 async def obtener_usuario_por_email(db: AsyncSession, email: str) -> Usuario | None:

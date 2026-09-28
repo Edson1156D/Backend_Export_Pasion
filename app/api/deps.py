@@ -20,7 +20,12 @@ async def usuario_actual(
     if payload is None or payload.get("id") is None:
         raise HTTPException(status_code=401, detail="Token inválido o expirado, vuelve a iniciar sesión")
 
-    usuario = await db.scalar(select(Usuario).where(Usuario.id == payload["id"]))
+    try:
+        usuario_id = int(payload["id"])
+    except (TypeError, ValueError):
+        usuario_id = None
+
+    usuario = await db.scalar(select(Usuario).where(Usuario.id == usuario_id)) if usuario_id is not None else None
     if usuario is None or not usuario.is_active:
         raise HTTPException(status_code=401, detail="Token inválido o expirado, vuelve a iniciar sesión")
     return usuario

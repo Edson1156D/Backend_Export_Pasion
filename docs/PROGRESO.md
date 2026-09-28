@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | 0 | Saneamiento | ✅ terminada | fase-0-saneamiento | `3 passed` |
 | 1 | Base de datos | ✅ terminada | fase-1-base-de-datos | `3 passed`; upgrade local SQLite OK |
-| 2 | Auth y usuarios | ⬜ pendiente | | |
+| 2 | Auth y usuarios | ✅ terminada | fase-2-auth-usuarios | `15 passed` (Fase 0 + Fase 2) |
 | 3 | Catálogos y productos | ⬜ pendiente | | |
 | 4 | Motor de inventario | ⬜ pendiente | | |
 | 5 | Entradas, compras y mermas | ⬜ pendiente | | |
@@ -76,3 +76,13 @@ Pendiente para fases siguientes: completar modelos, migraciones y endpoints de n
 - Se creó una única revisión Alembic (`20260928_0001`) sin operaciones destructivas, con FKs `ON DELETE RESTRICT`, índices requeridos, índices únicos case-insensitive y contadores por tipo de folio.
 - Se añadió seed idempotente parametrizable; no inserta datos porque no hay catálogo autorizado en el esquema real.
 - Validación: `3 passed`; `alembic upgrade head` ejecutado en SQLite temporal local y SQL offline PostgreSQL generado correctamente.
+
+## Fase 2 — Auth y usuarios (2026-09-28)
+
+- Se implementaron `POST /api/v1/auth/login` y `GET /api/v1/auth/me` con `accessToken`, `tokenType`, roles en minúsculas e ids serializados como texto.
+- El login conserva el mismo 401 para email inexistente o contraseña incorrecta y devuelve 403 para cuentas inactivas. `usuario_actual` valida el JWT y consulta nuevamente la cuenta activa en la base de datos.
+- Se añadió `requiere_roles(*roles)` y el CRUD protegido de `/api/v1/usuarios` para administradores, con validación de email, contraseña, duplicados, borrado con historial y protección del último administrador activo.
+- Se centralizó el contexto bcrypt en `app/core/seguridad.py` y se añadió `CamelModel` para respuestas y requests camelCase.
+- Validación: `15 passed` ejecutando Fase 0 y Fase 2 contra SQLite en memoria; se cubrieron login por rol, credenciales inválidas, inactividad, token expirado, permisos, formato y reglas de borrado/último administrador.
+
+Pendiente para fases siguientes: catálogos y productos (Fase 3), motor de inventario (Fase 4) y el resto de endpoints de negocio. La integración con el front sigue pendiente hasta reemplazar sus servicios mock por llamadas HTTP.

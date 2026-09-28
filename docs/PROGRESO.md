@@ -11,7 +11,7 @@
 | 2 | Auth y usuarios | ✅ terminada | fase-2-auth-usuarios | `15 passed` (Fase 0 + Fase 2) |
 | 3 | Catálogos y productos | ✅ terminada | fase-3-productos | `17 passed` (Fases 0, 2 y 3) |
 | 4 | Motor de inventario | ✅ terminada | fase-4-motor-inventario | `14 passed` (`31` suite completa) |
-| 5 | Entradas, compras y mermas | ⬜ pendiente | | |
+| 5 | Entradas, compras y mermas | ✅ terminada | fase-5-entradas-compras-mermas | `34 passed` (suite completa) |
 | 6 | Ventas | ⬜ pendiente | | |
 | 7 | Movimientos | ⬜ pendiente | | |
 | 8 | Comercio exterior | ⬜ pendiente | | |
@@ -107,3 +107,12 @@ Pendiente para fases siguientes: motor FIFO y lotes (Fase 4), entradas/compras/m
 - Se añadió `verificar_consistencia_stock` y cobertura async de apertura, consistencia, órdenes y permisos. Validación: `14 passed` de Fase 4 y `31 passed` en la suite completa.
 
 Pendiente para fases siguientes: entradas/compras/mermas (Fase 5), ventas (Fase 6), movimientos (Fase 7) y comercio exterior (Fase 8). La integración con el front continúa pendiente hasta reemplazar sus servicios mock por llamadas HTTP. La apertura debe ejecutarse con `python -m scripts.crear_aperturas` en una base real después de revisar sus datos existentes.
+
+## Fase 5 — Entradas, compras y mermas (2026-09-28)
+
+- Se añadieron `GET/POST /api/v1/entradas`, `POST /api/v1/compras` y `GET/POST /api/v1/mermas` con los permisos de la matriz: admin/taller para lectura, taller para producción y mermas, y admin para compras.
+- Las operaciones de escritura reutilizan `servicios/inventario.py`: cada ingreso crea lote, historial de entrada, sincroniza stock/costo y agrega una fila `entrada` al ledger en la misma transacción. Las mermas consumen FIFO y agregan una fila `merma` con costo FIFO.
+- El responsable se obtiene del token; se aplican los mensajes de producto/proveedor inexistente, costo obligatorio sin stock, stock insuficiente y motivos permitidos del contrato.
+- Se añadieron pruebas de compra, entrada de producción, permisos, costo promedio, tipos numéricos y atomicidad de mermas. Validación: `34 passed` en la suite completa.
+
+Pendiente para fases siguientes: ventas (Fase 6), movimientos (Fase 7) y comercio exterior (Fase 8). Sigue pendiente ejecutar Alembic contra una copia PostgreSQL real y conectar el frontend, que permanece sin modificaciones.

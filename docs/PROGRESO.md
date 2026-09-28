@@ -9,7 +9,7 @@
 | 0 | Saneamiento | ✅ terminada | fase-0-saneamiento | `3 passed` |
 | 1 | Base de datos | ✅ terminada | fase-1-base-de-datos | `3 passed`; upgrade local SQLite OK |
 | 2 | Auth y usuarios | ✅ terminada | fase-2-auth-usuarios | `15 passed` (Fase 0 + Fase 2) |
-| 3 | Catálogos y productos | ⬜ pendiente | | |
+| 3 | Catálogos y productos | ✅ terminada | fase-3-productos | `17 passed` (Fases 0, 2 y 3) |
 | 4 | Motor de inventario | ⬜ pendiente | | |
 | 5 | Entradas, compras y mermas | ⬜ pendiente | | |
 | 6 | Ventas | ⬜ pendiente | | |
@@ -86,3 +86,14 @@ Pendiente para fases siguientes: completar modelos, migraciones y endpoints de n
 - Validación: `15 passed` ejecutando Fase 0 y Fase 2 contra SQLite en memoria; se cubrieron login por rol, credenciales inválidas, inactividad, token expirado, permisos, formato y reglas de borrado/último administrador.
 
 Pendiente para fases siguientes: catálogos y productos (Fase 3), motor de inventario (Fase 4) y el resto de endpoints de negocio. La integración con el front sigue pendiente hasta reemplazar sus servicios mock por llamadas HTTP.
+
+## Fase 3 — Catálogos y productos (2026-09-28)
+
+- Se añadieron `GET /api/v1/categorias`, `GET /api/v1/proveedores` y `GET /api/v1/comercio-exterior/socios-comerciales` con los permisos de la matriz y los nombres camelCase del contrato.
+- Se implementó el CRUD protegido de `/api/v1/productos`: lectura para los tres roles y escritura solo para administradores.
+- El alta fuerza `currentStock = 0` y `costPrice = 0`; el esquema de actualización no acepta esos campos, por lo que el stock y el costo quedan bajo control de las fases de inventario.
+- Se validan categorías existentes, SKU sin distinguir mayúsculas, rangos del formulario del front, activación con precio mayor que cero y borrado con historial (`409`).
+- `costPrice`, `currentStock`, `salePrice` y `minStockAlert` se serializan como números JSON mediante un único esquema `ProductoPublico`, manteniendo `costPrice` visible para todos los roles según la decisión abierta B.
+- Validación: `17 passed` ejecutando la suite completa contra SQLite en memoria; la prueba de Fase 3 cubre catálogos, permisos, CRUD, duplicado de SKU, activación, historial y tipos numéricos.
+
+Pendiente para fases siguientes: motor FIFO y lotes (Fase 4), entradas/compras/mermas (Fase 5), ventas (Fase 6), movimientos (Fase 7) y comercio exterior (Fase 8). La integración con el front continúa pendiente hasta reemplazar sus servicios mock por llamadas HTTP.

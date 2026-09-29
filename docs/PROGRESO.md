@@ -12,7 +12,7 @@
 | 3 | Catálogos y productos | ✅ terminada | fase-3-productos | `17 passed` (Fases 0, 2 y 3) |
 | 4 | Motor de inventario | ✅ terminada | fase-4-motor-inventario | `14 passed` (`31` suite completa) |
 | 5 | Entradas, compras y mermas | ✅ terminada | fase-5-entradas-compras-mermas | `34 passed` (suite completa) |
-| 6 | Ventas | ⬜ pendiente | | |
+| 6 | Ventas | ✅ terminada | fase-6-ventas | `36 passed, 1 skipped` (suite local SQLite) |
 | 7 | Movimientos | ⬜ pendiente | | |
 | 8 | Comercio exterior | ⬜ pendiente | | |
 | 9 | Dashboard (opcional) | ⬜ pendiente | | |
@@ -116,3 +116,12 @@ Pendiente para fases siguientes: entradas/compras/mermas (Fase 5), ventas (Fase 
 - Se añadieron pruebas de compra, entrada de producción, permisos, costo promedio, tipos numéricos y atomicidad de mermas. Validación: `34 passed` en la suite completa.
 
 Pendiente para fases siguientes: ventas (Fase 6), movimientos (Fase 7) y comercio exterior (Fase 8). Sigue pendiente ejecutar Alembic contra una copia PostgreSQL real y conectar el frontend, que permanece sin modificaciones.
+
+## Fase 6 — Ventas (2026-09-28)
+
+- Se implementaron `POST /api/v1/ventas`, `GET /api/v1/ventas` para admin y `GET /api/v1/ventas/mias` para vendedor, con permisos de la matriz.
+- El servidor recalcula productos, precios, totales y vuelto; ignora snapshots/precios enviados por el cliente, guarda snapshots en `sale_items` y genera folio `BLT-####` después de `flush()`.
+- Cada ítem consume lotes FIFO y escribe una fila negativa en el ledger con `saleGroupId`, costo FIFO y folio. La transacción es todo o nada; la adquisición de locks se ordena por producto para reducir deadlocks.
+- Se añadieron pruebas de recalculo, FIFO, atomicidad, permisos, listados y números JSON. Validación local: `36 passed, 1 skipped`; la prueba concurrente queda omitida porque SQLite ignora `SELECT ... FOR UPDATE` y debe ejecutarse contra PostgreSQL.
+
+Pendiente para fases siguientes: movimientos (Fase 7), comercio exterior (Fase 8) y, opcionalmente, dashboard (Fase 9). Sigue pendiente ejecutar la prueba de concurrencia y Alembic contra una copia PostgreSQL real, además de conectar el frontend, que permanece sin modificaciones.

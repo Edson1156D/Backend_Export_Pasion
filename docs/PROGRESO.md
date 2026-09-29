@@ -14,7 +14,7 @@
 | 5 | Entradas, compras y mermas | ✅ terminada | fase-5-entradas-compras-mermas | `34 passed` (suite completa) |
 | 6 | Ventas | ✅ terminada | fase-6-ventas | `36 passed, 1 skipped` (suite local SQLite) |
 | 7 | Movimientos | ✅ terminada | fase-7-movimientos | `38 passed, 1 skipped` (suite completa) |
-| 8 | Comercio exterior | ⬜ pendiente | | |
+| 8 | Comercio exterior | ✅ terminada | fase-8-comercio-exterior | `42 passed, 2 skipped` (suite completa) |
 | 9 | Dashboard (opcional) | ⬜ pendiente | | |
 | 10 | Cierre | ⬜ pendiente | | |
 
@@ -135,3 +135,13 @@ Pendiente para fases siguientes: movimientos (Fase 7), comercio exterior (Fase 8
 - Validación: `38 passed, 1 skipped` en la suite completa; se añadió cobertura enfocada de permisos, enriquecimiento, orden, folio y tipos numéricos.
 
 Pendiente para fases siguientes: comercio exterior (Fase 8) y, opcionalmente, dashboard (Fase 9). Sigue pendiente ejecutar la prueba de concurrencia y Alembic contra una copia PostgreSQL real, además de conectar el frontend, que permanece sin modificaciones.
+
+## Fase 8 — Comercio exterior (2026-09-28)
+
+- Se implementaron `GET/POST /api/v1/comercio-exterior/operaciones`, protegidos exclusivamente para administradores. El responsable siempre se toma del token y el valor enviado en el body se ignora.
+- Las importaciones crean lotes `importacion` asociados al socio comercial y registran el ledger positivo; las exportaciones consumen FIFO y registran el ledger negativo con costo FIFO. El rollback de la sesión conserva la atomicidad cuando falta stock.
+- Se implementaron folios `IMP-####` y `EXP-####` con contadores independientes y bloqueo `SELECT ... FOR UPDATE`; para bases existentes se inicializa la fila del contador de forma idempotente.
+- Se replicaron los cálculos del frontend: subtotal de línea, subtotal/total USD y total PEN con redondeo half-up. Se añadieron aliases explícitos para las claves contractuales `precioUSD`, `subtotalUSD`, `totalUSD` y `totalPEN`.
+- Se añadieron pruebas de importación, exportación FIFO, atomicidad, permisos, tipos numéricos y secuencias independientes. Validación: `42 passed, 2 skipped` en la suite completa.
+
+Pendiente para fases siguientes: dashboard (Fase 9, opcional) y cierre (Fase 10). Sigue pendiente ejecutar la prueba de concurrencia de folios y la de inventario contra PostgreSQL real, ejecutar Alembic sobre una copia PostgreSQL real y conectar el frontend, que permanece sin modificaciones.

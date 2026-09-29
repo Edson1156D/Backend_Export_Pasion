@@ -13,7 +13,7 @@
 | 4 | Motor de inventario | ✅ terminada | fase-4-motor-inventario | `14 passed` (`31` suite completa) |
 | 5 | Entradas, compras y mermas | ✅ terminada | fase-5-entradas-compras-mermas | `34 passed` (suite completa) |
 | 6 | Ventas | ✅ terminada | fase-6-ventas | `36 passed, 1 skipped` (suite local SQLite) |
-| 7 | Movimientos | ⬜ pendiente | | |
+| 7 | Movimientos | ✅ terminada | fase-7-movimientos | `38 passed, 1 skipped` (suite completa) |
 | 8 | Comercio exterior | ⬜ pendiente | | |
 | 9 | Dashboard (opcional) | ⬜ pendiente | | |
 | 10 | Cierre | ⬜ pendiente | | |
@@ -125,3 +125,13 @@ Pendiente para fases siguientes: ventas (Fase 6), movimientos (Fase 7) y comerci
 - Se añadieron pruebas de recalculo, FIFO, atomicidad, permisos, listados y números JSON. Validación local: `36 passed, 1 skipped`; la prueba concurrente queda omitida porque SQLite ignora `SELECT ... FOR UPDATE` y debe ejecutarse contra PostgreSQL.
 
 Pendiente para fases siguientes: movimientos (Fase 7), comercio exterior (Fase 8) y, opcionalmente, dashboard (Fase 9). Sigue pendiente ejecutar la prueba de concurrencia y Alembic contra una copia PostgreSQL real, además de conectar el frontend, que permanece sin modificaciones.
+
+## Fase 7 — Movimientos (2026-09-28)
+
+- Se implementó `GET /api/v1/movimientos`, protegido exclusivamente para administradores y sin endpoints de escritura sobre el ledger.
+- El listado usa un `LEFT OUTER JOIN` con productos para conservar movimientos aunque el producto ya no exista, y resuelve `productName`, `sku` y `unitType` con los valores de fallback del contrato.
+- Se enriquecieron los movimientos de venta con `tipoVenta` legible y el folio propio o el de la venta asociada. El orden es `createdAt` descendente y luego `id` descendente.
+- Los campos numéricos se convierten explícitamente a `float` antes de serializarse como JSON.
+- Validación: `38 passed, 1 skipped` en la suite completa; se añadió cobertura enfocada de permisos, enriquecimiento, orden, folio y tipos numéricos.
+
+Pendiente para fases siguientes: comercio exterior (Fase 8) y, opcionalmente, dashboard (Fase 9). Sigue pendiente ejecutar la prueba de concurrencia y Alembic contra una copia PostgreSQL real, además de conectar el frontend, que permanece sin modificaciones.

@@ -16,7 +16,7 @@ from app.modelo.comercio_exterior import OperacionComercioExterior
 from app.modelo.usuarios import Usuario
 from app.servicios.comercio_exterior import listar_operaciones, registrar_operacion
 
-router = APIRouter(prefix="/comercio-exterior", tags=["comercio exterior"])
+router = APIRouter(prefix="/comercio-exterior", tags=["Comercio Exterior"])
 
 
 def _operacion_publica(operacion: OperacionComercioExterior) -> OperacionPublica:
@@ -56,7 +56,7 @@ def _operacion_publica(operacion: OperacionComercioExterior) -> OperacionPublica
 	)
 
 
-@router.get("/operaciones", response_model=list[OperacionPublica])
+@router.get("/operaciones", response_model=list[OperacionPublica], summary="Listar operaciones internacionales", description="Devuelve las operaciones de importación y exportación ordenadas por fecha descendente.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}, 403: {"description": 'Se requiere rol admin. Formato: {"detail": "texto"}.'}})
 async def listar_operaciones_admin(
 	_: Usuario = Depends(requiere_roles("admin")),
 	db: AsyncSession = Depends(get_db),
@@ -64,7 +64,7 @@ async def listar_operaciones_admin(
 	return [_operacion_publica(operacion) for operacion in await listar_operaciones(db)]
 
 
-@router.post("/operaciones", response_model=OperacionPublica, status_code=status.HTTP_201_CREATED)
+@router.post("/operaciones", response_model=OperacionPublica, status_code=status.HTTP_201_CREATED, summary="Registrar operación internacional", description="Registra una importación o exportación y actualiza el inventario asociado.", responses={404: {"description": 'Socio o producto inexistente. Formato: {"detail": "texto"}.'}, 409: {"description": 'Stock insuficiente o conflicto de operación. Formato: {"detail": "texto"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}})
 async def crear_operacion(
 	datos: OperacionCrear,
 	usuario: Usuario = Depends(requiere_roles("admin")),

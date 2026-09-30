@@ -8,6 +8,8 @@ from app.esquemas.comun import CamelModel
 
 
 class LineaOperacionCrear(CamelModel):
+	model_config = {"json_schema_extra": {"examples": [{"productoId": 12, "cantidad": 10, "precioUSD": 12.5}]}}
+
 	producto_id: int = Field(gt=0)
 	cantidad: Decimal = Field(gt=0)
 	precio_usd: Decimal = Field(ge=0, alias="precioUSD")
@@ -21,6 +23,8 @@ class LineaOperacionCrear(CamelModel):
 
 
 class OperacionCrear(CamelModel):
+	model_config = {"json_schema_extra": {"examples": [{"fecha": "2026-09-29", "tipo": "importacion", "socioComercialId": 2, "incoterm": "FOB", "medioTransporte": "maritimo", "tipoCambio": 3.75, "notas": "Importación de piedras", "lineas": [{"productoId": 12, "cantidad": 10, "precioUSD": 12.5}]}]}}
+
 	fecha: date
 	tipo: Literal["importacion", "exportacion"]
 	socio_comercial_id: int = Field(gt=0)
@@ -39,6 +43,8 @@ class OperacionCrear(CamelModel):
 
 
 class ProductoOperacionPublico(CamelModel):
+	model_config = {"json_schema_extra": {"examples": [{"id": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD"}]}}
+
 	id: int
 	name: str
 	sku: str
@@ -46,6 +52,8 @@ class ProductoOperacionPublico(CamelModel):
 
 
 class LineaOperacionPublica(CamelModel):
+	model_config = {"json_schema_extra": {"examples": [{"producto": {"id": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD"}, "cantidad": 10.0, "precioUSD": 12.5, "subtotalUSD": 125.0}]}}
+
 	producto: ProductoOperacionPublico
 	cantidad: float
 	precio_usd: float = Field(alias="precioUSD")
@@ -53,12 +61,16 @@ class LineaOperacionPublica(CamelModel):
 
 
 class SocioOperacionPublico(CamelModel):
+	model_config = {"json_schema_extra": {"examples": [{"id": 2, "nombre": "Gemstones Trading LLC", "pais": "Estados Unidos"}]}}
+
 	id: int
 	nombre: str
 	pais: str
 
 
 class OperacionPublica(CamelModel):
+	model_config = {"json_schema_extra": {"examples": [{"id": 3, "folio": "IMP-0002", "fecha": "2026-09-29", "tipo": "importacion", "socioComercial": {"id": 2, "nombre": "Gemstones Trading LLC", "pais": "Estados Unidos"}, "incoterm": "FOB", "medioTransporte": "maritimo", "tipoCambio": 3.75, "lineas": [{"producto": {"id": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD"}, "cantidad": 10.0, "precioUSD": 12.5, "subtotalUSD": 125.0}], "subtotalUSD": 125.0, "totalUSD": 125.0, "totalPEN": 468.75, "responsable": "Ana Torres", "notas": "Importación de piedras", "createdAt": "2026-09-29T15:30:00Z"}]}}
+
 	id: int
 	folio: str
 	fecha: date

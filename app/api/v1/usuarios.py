@@ -17,7 +17,7 @@ from app.modelo.usuarios import RolUsuario, Usuario
 from app.modelo.ventas import Venta
 from app.modelo.comercio_exterior import OperacionComercioExterior
 
-router = APIRouter(prefix="/usuarios", tags=["usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 ROL_BD: dict[RolAPI, str] = {
     "admin": RolUsuario.ADMIN.value,
@@ -74,7 +74,7 @@ async def _es_ultimo_admin_activo(db: AsyncSession, usuario: Usuario, nuevo_rol:
     return cantidad <= 1
 
 
-@router.get("", response_model=list[UsuarioPublico])
+@router.get("", response_model=list[UsuarioPublico], summary="Listar usuarios", description="Devuelve todos los usuarios registrados, ordenados del más reciente al más antiguo.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}, 403: {"description": 'Se requiere rol admin. Formato: {"detail": "texto"}.'}})
 async def listar_usuarios(
     _: Usuario = Depends(requiere_roles("admin")),
     db: AsyncSession = Depends(get_db),
@@ -83,7 +83,7 @@ async def listar_usuarios(
     return [_publico(usuario) for usuario in usuarios]
 
 
-@router.post("", response_model=UsuarioPublico, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UsuarioPublico, status_code=status.HTTP_201_CREATED, summary="Crear usuario", description="Registra un usuario con rol, credenciales y estado inicial.", responses={409: {"description": 'Email duplicado. Formato: {"detail": "Ya existe un usuario con ese email"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}})
 async def crear_usuario(
     datos: UsuarioCrear,
     _: Usuario = Depends(requiere_roles("admin")),
@@ -108,7 +108,7 @@ async def crear_usuario(
     return _publico(usuario)
 
 
-@router.put("/{usuario_id}", response_model=UsuarioPublico)
+@router.put("/{usuario_id}", response_model=UsuarioPublico, summary="Actualizar usuario", description="Actualiza los datos y permisos de un usuario existente.", responses={404: {"description": 'Usuario inexistente. Formato: {"detail": "Usuario no encontrado"}.'}, 409: {"description": 'Conflicto de email o administrador activo. Formato: {"detail": "texto"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}})
 async def actualizar_usuario(
     usuario_id: int,
     datos: UsuarioActualizar,
@@ -135,7 +135,7 @@ async def actualizar_usuario(
     return _publico(usuario)
 
 
-@router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Eliminar usuario", description="Elimina un usuario que no tenga registros asociados ni viole las reglas de administradores.", responses={404: {"description": 'Usuario inexistente. Formato: {"detail": "Usuario no encontrado"}.'}, 409: {"description": 'Eliminación no permitida. Formato: {"detail": "texto"}.'}})
 async def eliminar_usuario(
     usuario_id: int,
     actual: Usuario = Depends(requiere_roles("admin")),

@@ -11,7 +11,7 @@ from app.esquemas.lotes import LotePublico, ProveedorLote
 from app.modelo.lotes import Lote
 from app.modelo.usuarios import Usuario
 
-router = APIRouter(prefix="/lotes", tags=["lotes"])
+router = APIRouter(prefix="/lotes", tags=["Inventario"])
 
 
 def _publico(lote: Lote) -> LotePublico:
@@ -35,7 +35,7 @@ def _publico(lote: Lote) -> LotePublico:
 _OPCIONES_CARGA = (selectinload(Lote.supplier), selectinload(Lote.responsable))
 
 
-@router.get("/producto/{producto_id}", response_model=list[LotePublico])
+@router.get("/producto/{producto_id}", response_model=list[LotePublico], summary="Listar lotes FIFO", description="Devuelve los lotes de un producto en orden de consumo FIFO.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}})
 async def listar_lotes_producto(
     producto_id: int,
     _: Usuario = Depends(requiere_roles("admin", "taller")),
@@ -52,7 +52,7 @@ async def listar_lotes_producto(
     return [_publico(lote) for lote in lotes]
 
 
-@router.get("", response_model=list[LotePublico])
+@router.get("", response_model=list[LotePublico], summary="Listar lotes", description="Devuelve los lotes con filtros opcionales y ordenados del más reciente al más antiguo.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}, 422: {"description": 'Filtros inválidos. Formato: {"detail": "texto"}.'}})
 async def listar_lotes(
     product_id: int | None = Query(default=None),
     origen: str | None = Query(default=None),

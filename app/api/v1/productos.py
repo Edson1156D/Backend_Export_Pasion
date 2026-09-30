@@ -13,7 +13,7 @@ from app.modelo.productos import Producto
 from app.modelo.usuarios import Usuario
 from app.servicios.productos import producto_tiene_historial, sku_en_uso
 
-router = APIRouter(prefix="/productos", tags=["productos"])
+router = APIRouter(prefix="/productos", tags=["Productos"])
 
 
 def _publico(producto: Producto) -> ProductoPublico:
@@ -44,7 +44,7 @@ async def _validar_categoria(db: AsyncSession, category_id: int) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoría no encontrada")
 
 
-@router.get("", response_model=list[ProductoPublico])
+@router.get("", response_model=list[ProductoPublico], summary="Listar productos", description="Devuelve el catálogo completo de productos con stock y precios actuales.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}})
 async def listar_productos(
     _: Usuario = Depends(requiere_roles("admin", "vendedor", "taller")),
     db: AsyncSession = Depends(get_db),
@@ -53,7 +53,7 @@ async def listar_productos(
     return [_publico(producto) for producto in productos]
 
 
-@router.get("/{producto_id}", response_model=ProductoPublico)
+@router.get("/{producto_id}", response_model=ProductoPublico, summary="Consultar producto", description="Devuelve el detalle de un producto por su identificador.", responses={404: {"description": 'Producto inexistente. Formato: {"detail": "Producto no encontrado"}.'}})
 async def obtener_producto(
     producto_id: int,
     _: Usuario = Depends(requiere_roles("admin", "vendedor", "taller")),
@@ -62,7 +62,7 @@ async def obtener_producto(
     return _publico(await _obtener_producto(db, producto_id))
 
 
-@router.post("", response_model=ProductoPublico, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProductoPublico, status_code=status.HTTP_201_CREATED, summary="Crear producto", description="Registra un producto activo o inactivo; el stock y costo iniciales los controla el inventario.", responses={404: {"description": 'Categoría inexistente. Formato: {"detail": "texto"}.'}, 409: {"description": 'SKU duplicado. Formato: {"detail": "Ya existe un producto con ese SKU"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}})
 async def crear_producto(
     datos: ProductoCrear,
     _: Usuario = Depends(requiere_roles("admin")),
@@ -91,7 +91,7 @@ async def crear_producto(
     return _publico(producto)
 
 
-@router.put("/{producto_id}", response_model=ProductoPublico)
+@router.put("/{producto_id}", response_model=ProductoPublico, summary="Actualizar producto", description="Actualiza los datos editables de un producto sin permitir cambios directos de stock o costo.", responses={404: {"description": 'Producto o categoría inexistente. Formato: {"detail": "texto"}.'}, 409: {"description": 'SKU duplicado. Formato: {"detail": "Ya existe un producto con ese SKU"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}})
 async def actualizar_producto(
     producto_id: int,
     datos: ProductoActualizar,
@@ -118,7 +118,7 @@ async def actualizar_producto(
     return _publico(producto)
 
 
-@router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Eliminar producto", description="Elimina un producto solo cuando no tiene lotes, ventas ni movimientos asociados.", responses={404: {"description": 'Producto inexistente. Formato: {"detail": "Producto no encontrado"}.'}, 409: {"description": 'Producto con historial. Formato: {"detail": "texto"}.'}})
 async def eliminar_producto(
     producto_id: int,
     _: Usuario = Depends(requiere_roles("admin")),

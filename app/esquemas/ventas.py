@@ -8,6 +8,8 @@ from app.esquemas.comun import CamelModel
 
 
 class ItemVentaCrear(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"productId": 12, "quantity": 2}]}}
+
     product_id: int = Field(gt=0)
     quantity: Decimal = Field(gt=0)
 
@@ -20,6 +22,8 @@ class ItemVentaCrear(CamelModel):
 
 
 class VentaCrear(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"items": [{"productId": 12, "quantity": 2}], "tipoVenta": "tienda", "metodoPago": "efectivo", "pagoCon": 100.0}]}}
+
     items: list[ItemVentaCrear] = Field(min_length=1)
     tipo_venta: Literal["tienda", "feria", "digital", "otro"]
     metodo_pago: Literal["efectivo", "billetera-digital"]
@@ -34,6 +38,8 @@ class VentaCrear(CamelModel):
 
 
 class VentaItemPublica(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"productId": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD", "unitPrice": 45.0, "quantity": 2.0}]}}
+
     product_id: int
     name: str
     sku: str
@@ -43,6 +49,8 @@ class VentaItemPublica(CamelModel):
 
 
 class VentaPublica(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"id": 4, "folio": "BLT-0004", "items": [{"productId": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD", "unitPrice": 45.0, "quantity": 2.0}], "tipoVenta": "tienda", "metodoPago": "efectivo", "subtotal": 90.0, "total": 90.0, "pagoCon": 100.0, "vuelto": 10.0, "responsable": "Ana Torres", "createdAt": "2026-09-29T15:30:00Z"}]}}
+
     id: int
     folio: str
     items: list[VentaItemPublica]

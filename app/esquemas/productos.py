@@ -9,6 +9,8 @@ TipoUnidad = Literal["UNIDAD", "KILOGRAMO"]
 
 
 class ProductoPublico(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"id": 12, "categoryId": 1, "sku": "CUARZO-ROSA-001", "name": "Cuarzo rosa pulido", "unitType": "UNIDAD", "salePrice": 45.0, "costPrice": 18.0, "currentStock": 24.0, "minStockAlert": 5.0, "isActive": True, "createdAt": "2026-09-29T15:30:00Z"}]}}
+
     id: int
     category_id: int
     sku: str
@@ -23,6 +25,8 @@ class ProductoPublico(CamelModel):
 
 
 class ProductoCrear(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"sku": "CUARZO-ROSA-001", "name": "Cuarzo rosa pulido", "categoryId": 1, "unitType": "UNIDAD", "salePrice": 45.0, "minStockAlert": 5.0, "isActive": True}]}}
+
     sku: str = Field(min_length=1, max_length=50)
     name: str = Field(min_length=3, max_length=150)
     category_id: int = Field(gt=0)
@@ -39,6 +43,8 @@ class ProductoCrear(CamelModel):
 
 
 class ProductoActualizar(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"name": "Cuarzo rosa pulido premium", "salePrice": 49.9, "minStockAlert": 6.0, "isActive": True}]}}
+
     sku: str | None = Field(default=None, min_length=1, max_length=50)
     name: str | None = Field(default=None, min_length=3, max_length=150)
     category_id: int | None = Field(default=None, gt=0)

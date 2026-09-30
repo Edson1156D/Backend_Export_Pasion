@@ -4,6 +4,8 @@ from app.esquemas.comun import CamelModel
 
 
 class MovimientoPublico(CamelModel):
+    model_config = {"json_schema_extra": {"examples": [{"id": 55, "productId": 12, "responsable": "Ana Torres", "movementType": "venta", "quantity": -2.0, "createdAt": "2026-09-29T15:30:00Z", "reason": "Venta POS", "unitSoldPrice": 45.0, "unitCostPrice": 18.0, "folio": "BLT-0001", "productName": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD", "tipoVenta": "Tienda"}]}}
+
     id: int
     product_id: int
     responsable: str

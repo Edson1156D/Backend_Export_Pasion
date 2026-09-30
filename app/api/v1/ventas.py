@@ -10,7 +10,7 @@ from app.modelo.usuarios import Usuario
 from app.modelo.ventas import Venta
 from app.servicios.ventas import listar_ventas, registrar_venta
 
-router = APIRouter(tags=["ventas"])
+router = APIRouter(tags=["Ventas"])
 
 
 def _venta_publica(venta: Venta) -> VentaPublica:
@@ -39,7 +39,7 @@ def _venta_publica(venta: Venta) -> VentaPublica:
     )
 
 
-@router.get("/ventas", response_model=list[VentaPublica])
+@router.get("/ventas", response_model=list[VentaPublica], summary="Listar ventas", description="Devuelve todas las ventas registradas, ordenadas de la más reciente a la más antigua.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}, 403: {"description": 'Se requiere rol admin. Formato: {"detail": "texto"}.'}})
 async def listar_todas_las_ventas(
     _: Usuario = Depends(requiere_roles("admin")),
     db: AsyncSession = Depends(get_db),
@@ -47,7 +47,7 @@ async def listar_todas_las_ventas(
     return [_venta_publica(venta) for venta in await listar_ventas(db)]
 
 
-@router.get("/ventas/mias", response_model=list[VentaPublica])
+@router.get("/ventas/mias", response_model=list[VentaPublica], summary="Listar mis ventas", description="Devuelve únicamente las ventas registradas por el usuario autenticado.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}, 403: {"description": 'Se requiere rol vendedor. Formato: {"detail": "texto"}.'}})
 async def listar_mis_ventas(
     usuario: Usuario = Depends(requiere_roles("vendedor")),
     db: AsyncSession = Depends(get_db),
@@ -55,7 +55,7 @@ async def listar_mis_ventas(
     return [_venta_publica(venta) for venta in await listar_ventas(db, usuario.id)]
 
 
-@router.post("/ventas", response_model=VentaPublica, status_code=status.HTTP_201_CREATED)
+@router.post("/ventas", response_model=VentaPublica, status_code=status.HTTP_201_CREATED, summary="Registrar venta", description="Registra una venta, recalcula precios y consume el stock usando FIFO.", responses={404: {"description": 'Producto inexistente. Formato: {"detail": "Producto no encontrado"}.'}, 409: {"description": 'Stock insuficiente o conflicto de pago. Formato: {"detail": "texto"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}})
 async def crear_venta(
     datos: VentaCrear,
     usuario: Usuario = Depends(requiere_roles("admin", "vendedor")),

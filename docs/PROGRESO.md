@@ -16,7 +16,8 @@
 | 7 | Movimientos | ✅ terminada | fase-7-movimientos | `38 passed, 1 skipped` (suite completa) |
 | 8 | Comercio exterior | ✅ terminada | fase-8-comercio-exterior | `42 passed, 2 skipped` (suite completa) |
 | 9 | Dashboard (opcional) | ✅ terminada | fase-9-dashboard | `44 passed, 2 skipped` (suite completa) |
-| 10 | Cierre | ⬜ pendiente | | |
+| 10 | Cierre | ✅ terminada | fase-10-cierre | `44 passed, 2 skipped` |
+
 
 Estados: ⬜ pendiente · 🟨 en curso · ✅ terminada (tests en verde)
 
@@ -156,3 +157,15 @@ Pendiente para fases siguientes: dashboard (Fase 9, opcional) y cierre (Fase 10)
 - Validación: `44 passed, 2 skipped` en la suite completa; la prueba enfocada de Fase 9 cubre KPIs, serie, top, alertas, permisos y validación textual de `periodo`.
 
 Pendiente para Fase 10: revisar OpenAPI/README, ejecutar Alembic sobre una copia PostgreSQL real y ejecutar las pruebas de concurrencia contra PostgreSQL.
+
+## Fase 10 — Cierre (2026-09-29)
+
+- Se revisó y documentó el contrato OpenAPI expuesto por FastAPI (`/docs`, `/redoc` y `/openapi.json`) con nombre, descripción, versión y tags ordenados por recurso.
+- Se añadieron resúmenes, descripciones y respuestas de error documentadas a las 28 rutas de negocio, además de ejemplos JSON realistas para todos los esquemas Pydantic propios.
+- Se verificó el esquema Bearer/JWT generado por `HTTPBearer`: Swagger UI muestra el botón `Authorize` y las rutas protegidas declaran el esquema de seguridad.
+- Se reemplazó el README mínimo por una guía reproducible para crear el entorno virtual, instalar dependencias, configurar `.env`, ejecutar Alembic, levantar Uvicorn y correr tests.
+- Se añadió `python -m scripts.verificar_consistencia`, que compara el stock derivado de productos con la suma de lotes y devuelve código de salida no cero ante inconsistencias.
+- Se añadió `docs/DEPLOYMENT_CHECKLIST.md` con variables de entorno, CORS, migraciones, operación y diferencias entre los poolers de Supabase.
+- Se incorporó logging HTTP básico con método, ruta, estado y duración; no se registran cuerpos, tokens, contraseñas ni cabeceras.
+- Validación final: `/docs` y `/openapi.json` se generan correctamente; `44 passed, 2 skipped`.
+- Pendiente externo: ejecutar `alembic upgrade head` y las pruebas de concurrencia contra una copia PostgreSQL real; el frontend continúa pendiente de conexión y no fue modificado.

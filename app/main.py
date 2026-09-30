@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+import logging
+from time import perf_counter
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
@@ -16,11 +19,51 @@ from app.core.config import CORS_ORIGINS
 from app.core.errores import ErrorDeNegocio, manejar_error_de_negocio, manejar_error_no_controlado, manejar_http_exception, manejar_validacion
 
  
-app = FastAPI(title="Sistema Inventario - Backend")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger("eip.backend")
+
+app = FastAPI(
+    title="Import & Export Pasión API",
+    description="API para gestionar inventario, productos, ventas y operaciones de comercio exterior de Import & Export Pasión.",
+    version="1.0.0",
+    openapi_tags=[
+        {"name": "Auth", "description": "Autenticación y sesión de usuarios."},
+        {"name": "Usuarios", "description": "Administración de usuarios y permisos."},
+        {"name": "Productos", "description": "Catálogos y gestión de productos."},
+        {"name": "Inventario", "description": "Entradas, lotes y mermas de inventario."},
+        {"name": "Ventas", "description": "Registro y consulta de ventas."},
+        {"name": "Comercio Exterior", "description": "Importaciones, exportaciones y socios comerciales."},
+        {"name": "Movimientos", "description": "Consulta del ledger de movimientos de inventario."},
+        {"name": "Dashboard", "description": "Indicadores y alertas del negocio."},
+    ],
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
 app.add_exception_handler(HTTPException, manejar_http_exception)
 app.add_exception_handler(ErrorDeNegocio, manejar_error_de_negocio)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 app.add_exception_handler(Exception, manejar_error_no_controlado)
+
+
+@app.middleware("http")
+async def registrar_peticion(request: Request, call_next):
+    inicio = perf_counter()
+    response = await call_next(request)
+    duracion_ms = (perf_counter() - inicio) * 1000
+    logger.info(
+        "%s %s -> %s (%.1f ms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duracion_ms,
+    )
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -42,6 +85,10 @@ app.include_router(dashboard_router, prefix="/api/v1")
 
  
  
-@app.get("/")
+@app.get(
+    "/",
+    summary="Comprobar disponibilidad",
+    description="Confirma que la API de Import & Export Pasión está funcionando.",
+)
 async def raiz():
     return {"mensaje": "El backend está funcionando"}

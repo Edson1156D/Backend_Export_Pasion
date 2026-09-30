@@ -12,10 +12,10 @@ from app.modelo.proveedores import Proveedor
 from app.modelo.socios_comerciales import SocioComercial
 from app.modelo.usuarios import Usuario
 
-router = APIRouter(tags=["catalogos"])
+router = APIRouter()
 
 
-@router.get("/categorias", response_model=list[CategoriaPublica])
+@router.get("/categorias", response_model=list[CategoriaPublica], tags=["Productos"], summary="Listar categorías", description="Devuelve las categorías disponibles para clasificar productos.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}})
 async def listar_categorias(
     _: Usuario = Depends(requiere_roles("admin", "vendedor", "taller")),
     db: AsyncSession = Depends(get_db),
@@ -23,7 +23,7 @@ async def listar_categorias(
     return (await db.scalars(select(Categoria).order_by(Categoria.id))).all()
 
 
-@router.get("/proveedores", response_model=list[ProveedorPublico])
+@router.get("/proveedores", response_model=list[ProveedorPublico], tags=["Productos"], summary="Listar proveedores", description="Devuelve los proveedores nacionales disponibles para compras de inventario.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}})
 async def listar_proveedores(
     _: Usuario = Depends(requiere_roles("admin", "taller")),
     db: AsyncSession = Depends(get_db),
@@ -31,7 +31,7 @@ async def listar_proveedores(
     return (await db.scalars(select(Proveedor).order_by(Proveedor.id))).all()
 
 
-@router.get("/comercio-exterior/socios-comerciales", response_model=list[SocioComercialPublico])
+@router.get("/comercio-exterior/socios-comerciales", response_model=list[SocioComercialPublico], tags=["Comercio Exterior"], summary="Listar socios comerciales", description="Devuelve los socios comerciales disponibles para operaciones internacionales.", responses={401: {"description": 'Autenticación requerida. Formato: {"detail": "texto"}.'}})
 async def listar_socios_comerciales(
     _: Usuario = Depends(requiere_roles("admin")),
     db: AsyncSession = Depends(get_db),

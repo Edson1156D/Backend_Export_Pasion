@@ -15,7 +15,7 @@
 | 6 | Ventas | ✅ terminada | fase-6-ventas | `36 passed, 1 skipped` (suite local SQLite) |
 | 7 | Movimientos | ✅ terminada | fase-7-movimientos | `38 passed, 1 skipped` (suite completa) |
 | 8 | Comercio exterior | ✅ terminada | fase-8-comercio-exterior | `42 passed, 2 skipped` (suite completa) |
-| 9 | Dashboard (opcional) | ⬜ pendiente | | |
+| 9 | Dashboard (opcional) | ✅ terminada | fase-9-dashboard | `44 passed, 2 skipped` (suite completa) |
 | 10 | Cierre | ⬜ pendiente | | |
 
 Estados: ⬜ pendiente · 🟨 en curso · ✅ terminada (tests en verde)
@@ -145,3 +145,14 @@ Pendiente para fases siguientes: comercio exterior (Fase 8) y, opcionalmente, da
 - Se añadieron pruebas de importación, exportación FIFO, atomicidad, permisos, tipos numéricos y secuencias independientes. Validación: `42 passed, 2 skipped` en la suite completa.
 
 Pendiente para fases siguientes: dashboard (Fase 9, opcional) y cierre (Fase 10). Sigue pendiente ejecutar la prueba de concurrencia de folios y la de inventario contra PostgreSQL real, ejecutar Alembic sobre una copia PostgreSQL real y conectar el frontend, que permanece sin modificaciones.
+
+## Fase 9 — Dashboard (2026-09-29)
+
+- Se implementó `GET /api/v1/dashboard/resumen?periodo=dia|semana|mes`, exclusivo para administradores, con `mes` como valor predeterminado y respuesta directa en camelCase.
+- El resumen devuelve ventas totales, cantidad de ventas, promedio por venta, piezas vendidas y margen bruto. El margen usa el costo FIFO persistido en cada movimiento de venta, no el costo actual del producto.
+- Se añadió una serie de las últimas ocho semanas con ventas, piezas y margen, además del top 5 de productos ordenado por ventas y piezas.
+- Las alertas se calculan con las mismas reglas del frontend: agotado, stock bajo e inactivo. No se modificó ningún archivo del repositorio frontend.
+- Se usa UTC-05:00 fijo para los límites de calendario de Perú, sin agregar la dependencia `tzdata`; todos los números se serializan como JSON `number`.
+- Validación: `44 passed, 2 skipped` en la suite completa; la prueba enfocada de Fase 9 cubre KPIs, serie, top, alertas, permisos y validación textual de `periodo`.
+
+Pendiente para Fase 10: revisar OpenAPI/README, ejecutar Alembic sobre una copia PostgreSQL real y ejecutar las pruebas de concurrencia contra PostgreSQL.

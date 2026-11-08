@@ -47,6 +47,29 @@ No hay columnas con nombres alternativos que adaptar en `schema.sql`. La migraci
 detecta `users` existente para no recrearla ni borrar datos, y también puede crearla
 en una base local vacía.
 
+## Tablas generadas por `alembic upgrade head` (H1)
+
+Al ejecutar la migración de la Fase 1 se generan las siguientes tablas de negocio:
+
+1. `users` — usuarios, roles y estado de acceso. Solo se crea si todavía no existe.
+2. `categories` — categorías y subcategorías.
+3. `suppliers` — proveedores nacionales.
+4. `foreign_partners` — socios comerciales del exterior.
+5. `products` — catálogo de productos y stock derivado.
+6. `lots` — lotes de inventario para el consumo FIFO.
+7. `stock_entries` — historial de entradas y compras.
+8. `sales` — cabecera de ventas.
+9. `sale_items` — líneas de venta y snapshot del producto.
+10. `inventory_movements` — ledger inmutable de movimientos de inventario.
+11. `wastes` — registro de mermas.
+12. `foreign_trade_operations` — operaciones de importación y exportación.
+13. `foreign_trade_lines` — líneas de las operaciones de comercio exterior.
+14. `foreign_trade_counters` — contadores independientes de folios `IMP-####` y `EXP-####`.
+
+Además, Alembic crea o mantiene la tabla técnica `alembic_version`, que registra la
+revisión aplicada. En una base que ya contiene `users`, la migración conserva esa
+tabla y agrega las demás sin borrar datos.
+
 ## Decisiones tomadas durante el desarrollo
 - 2026-09-28 — Fase 1 — Se mantuvieron los nombres de `users` definidos en `schema.sql`; es la única tabla real disponible.
 - 2026-09-28 — Fase 1 — No se inventaron categorías, proveedores ni socios: el esquema no aporta nombres ni IDs reales. Se dejó `seed_catalogos` idempotente para insertar filas explícitas solo cuando cada tabla esté vacía.

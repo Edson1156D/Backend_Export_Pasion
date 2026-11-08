@@ -49,26 +49,244 @@ en una base local vacía.
 
 ## Tablas generadas por `alembic upgrade head` (H1)
 
-Al ejecutar la migración de la Fase 1 se generan las siguientes tablas de negocio:
+`alembic upgrade head` crea la estructura de las tablas; no inventa registros de
+negocio. Por eso, una base nueva queda inicialmente sin categorías, productos,
+ventas, etc. La tabla `users` se conserva si ya existe y solo se crea cuando falta.
+El seed de catálogos tampoco inserta filas sin datos autorizados.
 
-1. `users` — usuarios, roles y estado de acceso. Solo se crea si todavía no existe.
-2. `categories` — categorías y subcategorías.
-3. `suppliers` — proveedores nacionales.
-4. `foreign_partners` — socios comerciales del exterior.
-5. `products` — catálogo de productos y stock derivado.
-6. `lots` — lotes de inventario para el consumo FIFO.
-7. `stock_entries` — historial de entradas y compras.
-8. `sales` — cabecera de ventas.
-9. `sale_items` — líneas de venta y snapshot del producto.
-10. `inventory_movements` — ledger inmutable de movimientos de inventario.
-11. `wastes` — registro de mermas.
-12. `foreign_trade_operations` — operaciones de importación y exportación.
-13. `foreign_trade_lines` — líneas de las operaciones de comercio exterior.
-14. `foreign_trade_counters` — contadores independientes de folios `IMP-####` y `EXP-####`.
+En las tablas siguientes, `PK` significa clave primaria, `FK` significa clave
+foránea, `NULL` significa que el dato es opcional y `NOT NULL` que es obligatorio.
+Los tipos `NUMERIC(12,2)` representan cantidades o importes con dos decimales;
+`NUMERIC(10,4)` representa tipos de cambio.
 
-Además, Alembic crea o mantiene la tabla técnica `alembic_version`, que registra la
-revisión aplicada. En una base que ya contiene `users`, la migración conserva esa
-tabla y agrega las demás sin borrar datos.
+### 1. `users`
+
+Cada fila representa un usuario que puede autenticarse en el sistema.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador del usuario. |
+| `full_name` | VARCHAR(255) | NOT NULL | Nombre completo. |
+| `email` | VARCHAR(255) | NOT NULL, único sin distinguir mayúsculas | Correo de acceso. |
+| `hashed_password` | VARCHAR(255) | NOT NULL | Contraseña almacenada como hash, nunca en texto plano. |
+| `role` | VARCHAR(50) | NOT NULL | `ADMIN`, `VENDEDOR` o `TALLER`. |
+| `is_active` | BOOLEAN | NOT NULL | Indica si puede iniciar sesión. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora de creación. |
+
+### 2. `categories`
+
+Cada fila representa una categoría o subcategoría de productos.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador de la categoría. |
+| `parent_id` | INTEGER | FK a `categories.id`, NULL | Categoría padre; NULL indica una categoría raíz. |
+| `name` | VARCHAR(150) | NOT NULL | Nombre de la categoría. |
+| `description` | TEXT | NULL | Descripción adicional. |
+
+### 3. `suppliers`
+
+Cada fila representa un proveedor nacional utilizado en compras o entradas.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador del proveedor. |
+| `name` | VARCHAR(255) | NOT NULL | Nombre o razón social del proveedor. |
+
+### 4. `foreign_partners`
+
+Cada fila representa un socio comercial del exterior, como cliente o proveedor.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador del socio comercial. |
+| `name` | VARCHAR(255) | NOT NULL | Nombre del socio o empresa. |
+| `country` | VARCHAR(120) | NOT NULL | País del socio comercial. |
+
+### 5. `products`
+
+Cada fila representa un producto del catálogo que puede venderse o moverse en
+inventario.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador del producto. |
+| `category_id` | INTEGER | FK a `categories.id`, NOT NULL | Categoría del producto. |
+| `sku` | VARCHAR(50) | NOT NULL, único sin distinguir mayúsculas | Código interno del producto. |
+| `name` | VARCHAR(150) | NOT NULL | Nombre comercial. |
+| `unit_type` | VARCHAR(20) | NOT NULL | Unidad de medida, por ejemplo `UNIDAD` o `KILOGRAMO`. |
+| `sale_price` | NUMERIC(12,2) | NOT NULL | Precio de venta vigente. |
+| `cost_price` | NUMERIC(12,2) | NOT NULL | Costo derivado de los lotes. |
+| `current_stock` | NUMERIC(12,2) | NOT NULL | Stock actual derivado de los lotes disponibles. |
+| `min_stock_alert` | NUMERIC(12,2) | NOT NULL | Umbral para alertar stock bajo. |
+| `is_active` | BOOLEAN | NOT NULL | Indica si el producto está habilitado para operar. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora de creación. |
+
+### 6. `lots`
+
+Cada fila representa un lote de existencias de un producto. Los lotes se consumen
+en orden FIFO, del más antiguo al más reciente.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador del lote. |
+| `product_id` | INTEGER | FK a `products.id`, NOT NULL | Producto al que pertenece el lote. |
+| `code` | VARCHAR(50) | NOT NULL, único | Código del lote, por ejemplo `LOTE-0001`. |
+| `origin` | VARCHAR(30) | NOT NULL | Origen: `apertura`, `entrada`, `compra` o `importacion`. |
+| `initial_qty` | NUMERIC(12,2) | NOT NULL | Cantidad original recibida. |
+| `available_qty` | NUMERIC(12,2) | NOT NULL | Cantidad que todavía puede consumirse. |
+| `unit_cost_pen` | NUMERIC(12,2) | NOT NULL | Costo unitario en soles. |
+| `supplier_id` | INTEGER | FK a `suppliers.id`, NULL | Proveedor nacional, si corresponde. |
+| `foreign_partner_id` | INTEGER | FK a `foreign_partners.id`, NULL | Socio exterior, si corresponde. |
+| `responsable_id` | INTEGER | FK a `users.id`, NOT NULL | Usuario responsable de crear el lote. |
+| `received_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora de recepción; determina el orden FIFO. |
+
+### 7. `stock_entries`
+
+Cada fila representa un registro histórico de entrada de stock o compra.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador de la entrada. |
+| `product_id` | INTEGER | FK a `products.id`, NOT NULL | Producto ingresado. |
+| `quantity` | NUMERIC(12,2) | NOT NULL | Cantidad ingresada. |
+| `supplier_id` | INTEGER | FK a `suppliers.id`, NULL | Proveedor de la entrada, si existe. |
+| `responsable_id` | INTEGER | FK a `users.id`, NOT NULL | Usuario que registró la entrada. |
+| `notes` | TEXT | NULL | Observaciones de la entrada. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora del registro. |
+
+### 8. `sales`
+
+Cada fila representa la cabecera de una venta; sus productos se detallan en
+`sale_items`.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador interno de la venta. |
+| `folio` | VARCHAR(50) | NOT NULL, único | Folio de la boleta, por ejemplo `BLT-0001`. |
+| `sale_type` | VARCHAR(30) | NOT NULL | Tipo de venta. |
+| `payment_method` | VARCHAR(30) | NOT NULL | Método de pago. |
+| `subtotal` | NUMERIC(12,2) | NOT NULL | Suma de los importes antes de ajustes. |
+| `total` | NUMERIC(12,2) | NOT NULL | Total cobrado. |
+| `paid_with` | NUMERIC(12,2) | NULL | Importe entregado por el cliente, si aplica. |
+| `change_amount` | NUMERIC(12,2) | NULL | Vuelto calculado, si aplica. |
+| `responsable_id` | INTEGER | FK a `users.id`, NOT NULL | Usuario que registró la venta. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora de la venta. |
+
+### 9. `sale_items`
+
+Cada fila representa una línea de una venta y conserva un snapshot del producto
+al momento de venderlo.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador de la línea. |
+| `sale_id` | INTEGER | FK a `sales.id`, NOT NULL | Venta a la que pertenece. |
+| `product_id` | INTEGER | FK a `products.id`, NOT NULL | Producto vendido. |
+| `name` | VARCHAR(150) | NOT NULL | Nombre del producto al momento de vender. |
+| `sku` | VARCHAR(50) | NOT NULL | SKU al momento de vender. |
+| `unit_type` | VARCHAR(20) | NOT NULL | Unidad de medida al momento de vender. |
+| `unit_price` | NUMERIC(12,2) | NOT NULL | Precio unitario aplicado. |
+| `quantity` | NUMERIC(12,2) | NOT NULL | Cantidad vendida. |
+
+### 10. `inventory_movements`
+
+Cada fila representa un movimiento del ledger de inventario. Es histórico:
+se inserta y no se edita ni se borra.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador del movimiento. |
+| `product_id` | INTEGER | FK a `products.id`, NOT NULL | Producto afectado. |
+| `responsable_id` | INTEGER | FK a `users.id`, NOT NULL | Usuario responsable. |
+| `movement_type` | VARCHAR(30) | NOT NULL | `entrada`, `venta`, `merma`, `importacion` o `exportacion`. |
+| `quantity` | NUMERIC(12,2) | NOT NULL | Cantidad con signo: positiva al ingresar y negativa al salir. |
+| `reason` | TEXT | NULL | Motivo u observación. |
+| `unit_sold_price` | NUMERIC(12,2) | NULL | Precio unitario de venta, si aplica. |
+| `unit_cost_price` | NUMERIC(12,2) | NULL | Costo unitario usado para el movimiento. |
+| `waste_type` | VARCHAR(100) | NULL | Tipo de merma, si aplica. |
+| `sale_group_id` | INTEGER | FK a `sales.id`, NULL | Venta relacionada, si aplica. |
+| `supplier_name` | VARCHAR(255) | NULL | Nombre del proveedor registrado en el movimiento, si aplica. |
+| `folio` | VARCHAR(50) | NULL | Folio de venta o comercio exterior, si aplica. |
+| `unit_price_usd` | NUMERIC(12,2) | NULL | Precio unitario en dólares, si aplica. |
+| `exchange_rate` | NUMERIC(10,4) | NULL | Tipo de cambio usado, si aplica. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora del movimiento. |
+
+### 11. `wastes`
+
+Cada fila representa una merma registrada sobre un producto.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador de la merma. |
+| `product_id` | INTEGER | FK a `products.id`, NOT NULL | Producto perdido o descartado. |
+| `quantity` | NUMERIC(12,2) | NOT NULL | Cantidad mermada. |
+| `reason_code` | VARCHAR(100) | NOT NULL | Código o motivo de la merma. |
+| `detail` | TEXT | NULL | Explicación adicional. |
+| `responsable_id` | INTEGER | FK a `users.id`, NOT NULL | Usuario que registró la merma. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora del registro. |
+
+### 12. `foreign_trade_operations`
+
+Cada fila representa una operación completa de importación o exportación.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador de la operación. |
+| `folio` | VARCHAR(50) | NOT NULL, único | Folio `IMP-####` o `EXP-####`. |
+| `date` | DATE | NOT NULL | Fecha comercial de la operación. |
+| `type` | VARCHAR(20) | NOT NULL | `importacion` o `exportacion`. |
+| `partner_id` | INTEGER | FK a `foreign_partners.id`, NOT NULL | Socio comercial involucrado. |
+| `incoterm` | VARCHAR(10) | NULL | Incoterm acordado, si aplica. |
+| `transport` | VARCHAR(20) | NULL | Medio de transporte, si aplica. |
+| `exchange_rate` | NUMERIC(10,4) | NOT NULL | Tipo de cambio de la operación. |
+| `subtotal_usd` | NUMERIC(12,2) | NOT NULL | Subtotal antes de ajustes en dólares. |
+| `total_usd` | NUMERIC(12,2) | NOT NULL | Total en dólares. |
+| `total_pen` | NUMERIC(12,2) | NOT NULL | Total convertido a soles. |
+| `notes` | TEXT | NULL | Observaciones. |
+| `responsable_id` | INTEGER | FK a `users.id`, NOT NULL | Usuario que registró la operación. |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Fecha y hora de creación. |
+
+### 13. `foreign_trade_lines`
+
+Cada fila representa un producto incluido en una operación de comercio exterior.
+También conserva un snapshot del producto.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `id` | INTEGER | PK | Identificador de la línea. |
+| `operation_id` | INTEGER | FK a `foreign_trade_operations.id`, NOT NULL | Operación a la que pertenece. |
+| `product_id` | INTEGER | FK a `products.id`, NOT NULL | Producto importado o exportado. |
+| `name` | VARCHAR(150) | NOT NULL | Nombre al momento de la operación. |
+| `sku` | VARCHAR(50) | NOT NULL | SKU al momento de la operación. |
+| `unit_type` | VARCHAR(20) | NOT NULL | Unidad de medida. |
+| `quantity` | NUMERIC(12,2) | NOT NULL | Cantidad operada. |
+| `price_usd` | NUMERIC(12,2) | NOT NULL | Precio unitario en dólares. |
+| `subtotal_usd` | NUMERIC(12,2) | NOT NULL | Subtotal de la línea en dólares. |
+
+### 14. `foreign_trade_counters`
+
+Cada fila representa un contador independiente para generar folios de comercio
+exterior sin duplicados.
+
+| Columna | Tipo | Regla | Dato que contiene |
+|---|---|---|---|
+| `type` | VARCHAR(20) | PK | Tipo de contador: `IMP` o `EXP`. |
+| `last_number` | INTEGER | NOT NULL | Último número utilizado para ese tipo de folio. |
+
+### Tabla técnica `alembic_version`
+
+Cada fila representa la revisión de Alembic aplicada a la base de datos. En esta
+aplicación normalmente contiene una sola fila.
+
+| Columna | Tipo | Dato que contiene |
+|---|---|---|
+| `version_num` | VARCHAR(32) | Identificador de la migración aplicada, actualmente `20260928_0001`. |
+
+Las claves foráneas usan `ON DELETE RESTRICT`: no se puede borrar un registro que
+todavía tenga datos relacionados. La migración también crea índices para el correo
+de usuarios, el SKU de productos, el orden FIFO de lotes, la fecha de movimientos
+y la fecha de ventas.
 
 ## Decisiones tomadas durante el desarrollo
 - 2026-09-28 — Fase 1 — Se mantuvieron los nombres de `users` definidos en `schema.sql`; es la única tabla real disponible.

@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy import text
 import asyncio
 
-DATABASE_URL = "postgresql+asyncpg://postgres.rzclpiwisupmdzpwfvxr:DataBasePasion%21@aws-0-us-west-2.pooler.supabase.com:5432/postgres"
+from app.core.config import DATABASE_URL
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 

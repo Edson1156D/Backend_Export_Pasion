@@ -1,12 +1,23 @@
-from pydantic import BaseModel, EmailStr
+from typing import Literal
+
+from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
-    """
-    Datos que el frontend debe enviar para iniciar sesión:
-    el correo, la contraseña, y el rol que el usuario seleccionó
-    con los botones (dueño / ventas / almacen).
-    """
-    email: EmailStr
+    """Lo que envía el front al iniciar sesión (el rol sale de la base de datos)."""
+    email: str
     password: str
-    role: str
+
+
+class UsuarioSesion(BaseModel):
+    """Usuario tal como lo espera el front (frontend/src/types/auth.ts)."""
+    id: str
+    nombre: str
+    rol: Literal["admin", "vendedor", "taller"]
+
+
+class LoginResponse(BaseModel):
+    """Respuesta de POST /auth/login (frontend/.../auth.service.ts)."""
+    accessToken: str
+    tokenType: str = "bearer"
+    usuario: UsuarioSesion

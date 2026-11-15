@@ -1,54 +1,70 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import BaseModel
 
-from app.esquemas.comun import CamelModel
-
-TipoUnidad = Literal["UNIDAD", "KILOGRAMO"]
-
-
-class ProductoPublico(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"id": 12, "categoryId": 1, "sku": "CUARZO-ROSA-001", "name": "Cuarzo rosa pulido", "unitType": "UNIDAD", "salePrice": 45.0, "costPrice": 18.0, "currentStock": 24.0, "minStockAlert": 5.0, "isActive": True, "createdAt": "2026-09-29T15:30:00Z"}]}}
-
+class CategoriaOut(BaseModel):
+    """Igual a `Category` en frontend/src/types/products.ts."""
     id: int
-    category_id: int
+    parentId: int | None
+    name: str
+    description: str | None
+
+
+class ProductoOut(BaseModel):
+    """Igual a `Product` en frontend/src/types/products.ts."""
+    id: int
+    categoryId: int
     sku: str
     name: str
-    unit_type: TipoUnidad
-    sale_price: float
-    cost_price: float
-    current_stock: float
-    min_stock_alert: float
-    is_active: bool
-    created_at: datetime
+    unitType: str            # "UNIDAD" | "KILOGRAMO"
+    salePrice: float
+    costPrice: float         # el front exige número; si la BD tiene NULL se envía 0
+    currentStock: float
+    minStockAlert: float
+    isActive: bool
+    createdAt: datetime | None
 
 
-class ProductoCrear(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"sku": "CUARZO-ROSA-001", "name": "Cuarzo rosa pulido", "categoryId": 1, "unitType": "UNIDAD", "salePrice": 45.0, "minStockAlert": 5.0, "isActive": True}]}}
-
-    sku: str = Field(min_length=1, max_length=50)
-    name: str = Field(min_length=3, max_length=150)
-    category_id: int = Field(gt=0)
-    unit_type: TipoUnidad
-    sale_price: float = Field(ge=0)
-    min_stock_alert: float = Field(ge=0)
-    is_active: bool = True
-
-    @model_validator(mode="after")
-    def validar_activacion(self) -> "ProductoCrear":
-        if self.is_active and self.sale_price <= 0:
-            raise ValueError("Para activar el producto, el precio de venta debe ser mayor a 0")
-        return self
+def categoria_a_out(c) -> CategoriaOut:
+    return CategoriaOut(id=c.id, parentId=c.parent_id, name=c.name, description=c.description)
 
 
-class ProductoActualizar(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"name": "Cuarzo rosa pulido premium", "salePrice": 49.9, "minStockAlert": 6.0, "isActive": True}]}}
+def producto_a_out(p) -> ProductoOut:
+    return ProductoOut(
+        id=p.id,
+        categoryId=p.category_id,
+        sku=p.sku,
+        name=p.name,
+        unitType=(p.unit_type or "").strip().upper(),
+        salePrice=float(p.sale_price),
+        costPrice=float(p.cost_price) if p.cost_price is not None else 0.0,
+        currentStock=float(p.current_stock),
+        minStockAlert=float(p.min_stock_alert),
+        isActive=p.is_active is not False,   # NULL se trata como activo
+        createdAt=p.created_at,
+    )
 
-    sku: str | None = Field(default=None, min_length=1, max_length=50)
-    name: str | None = Field(default=None, min_length=3, max_length=150)
-    category_id: int | None = Field(default=None, gt=0)
-    unit_type: TipoUnidad | None = None
-    sale_price: float | None = Field(default=None, ge=0)
-    min_stock_alert: float | None = Field(default=None, ge=0)
-    is_active: bool | None = None
+UnidadMedida = Literal["UNIDAD", "KILOGRAMO"]
+
+
+class ProductoCrear(BaseModel):
+    """Igual a `ProductCreateData` del front. Stock y costo NO se envían: los calcula el sistema."""
+    categoryId: int
+    sku: str
+    name: str
+    unitType: UnidadMedida
+    salePrice: float
+    minStockAlert: float
+    isActive: bool = True
+
+
+class ProductoActualizar(BaseModel):
+    """Igual a `ProductUpdateData` del front: solo se cambian los campos que lleguen."""
+    categoryId: int | None = None
+    sku: str | None = None
+    name: str | None = None
+    unitType: UnidadMedida | None = None
+    salePrice: float | None = None
+    minStockAlert: float | None = None
+    isActive: bool | None = None

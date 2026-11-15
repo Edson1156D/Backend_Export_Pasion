@@ -1,64 +1,41 @@
 from datetime import datetime
-from decimal import Decimal
-from typing import Literal
 
-from pydantic import Field, field_validator
-
-from app.esquemas.comun import CamelModel
+from pydantic import BaseModel
 
 
-class ItemVentaCrear(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"productId": 12, "quantity": 2}]}}
-
-    product_id: int = Field(gt=0)
-    quantity: Decimal = Field(gt=0)
-
-    @field_validator("quantity")
-    @classmethod
-    def cantidad_finita(cls, value: Decimal) -> Decimal:
-        if not value.is_finite():
-            raise ValueError("La cantidad debe ser mayor a 0")
-        return value
-
-
-class VentaCrear(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"items": [{"productId": 12, "quantity": 2}], "tipoVenta": "tienda", "metodoPago": "efectivo", "pagoCon": 100.0}]}}
-
-    items: list[ItemVentaCrear] = Field(min_length=1)
-    tipo_venta: Literal["tienda", "feria", "digital", "otro"]
-    metodo_pago: Literal["efectivo", "billetera-digital"]
-    pago_con: Decimal | None = Field(default=None, ge=0)
-
-    @field_validator("pago_con")
-    @classmethod
-    def pago_finito(cls, value: Decimal | None) -> Decimal | None:
-        if value is not None and not value.is_finite():
-            raise ValueError("Ingresá un monto válido")
-        return value
-
-
-class VentaItemPublica(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"productId": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD", "unitPrice": 45.0, "quantity": 2.0}]}}
-
-    product_id: int
+class VentaItemOut(BaseModel):
+    """Igual a `VentaItem` en frontend/src/features/ventas/types.ts."""
+    productId: int
     name: str
     sku: str
-    unit_type: Literal["UNIDAD", "KILOGRAMO"]
-    unit_price: float
+    unitType: str
+    unitPrice: float
     quantity: float
 
 
-class VentaPublica(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"id": 4, "folio": "BLT-0004", "items": [{"productId": 12, "name": "Cuarzo rosa pulido", "sku": "CUARZO-ROSA-001", "unitType": "UNIDAD", "unitPrice": 45.0, "quantity": 2.0}], "tipoVenta": "tienda", "metodoPago": "efectivo", "subtotal": 90.0, "total": 90.0, "pagoCon": 100.0, "vuelto": 10.0, "responsable": "Ana Torres", "createdAt": "2026-09-29T15:30:00Z"}]}}
-
+class VentaOut(BaseModel):
+    """Igual a `Venta` del front. pagoCon y vuelto solo existen si se registraron en efectivo."""
     id: int
-    folio: str
-    items: list[VentaItemPublica]
-    tipo_venta: str
-    metodo_pago: str
+    items: list[VentaItemOut]
+    tipoVenta: str
+    metodoPago: str
     subtotal: float
     total: float
-    pago_con: float | None = None
-    vuelto: float | None = None
+    folio: str
     responsable: str
-    created_at: datetime
+    createdAt: datetime
+    pagoCon: float | None = None
+    vuelto: float | None = None
+
+
+class VentaItemCrear(BaseModel):
+    productId: int
+    quantity: float
+
+
+class VentaCrear(BaseModel):
+    """Cuerpo del punto de venta. Los precios NO se envían: los pone el servidor."""
+    items: list[VentaItemCrear]
+    tipoVenta: str
+    metodoPago: str
+    pagoCon: float | None = None

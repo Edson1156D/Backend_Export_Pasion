@@ -1,33 +1,30 @@
-from __future__ import annotations
+from sqlalchemy import BigInteger, Column, DateTime, Integer, Numeric, String
 
-from datetime import datetime
-from decimal import Decimal
-from typing import Optional
-
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.bd.base import Base
+from app.bd.session import Base
 
 
 class MovimientoInventario(Base):
-	__tablename__ = "inventory_movements"
+    """
+    Tabla real `inventory_movements` (ya existe en la base de datos).
+    El tipo de movimiento es texto libre; hoy se usan 'TRANSFERENCIA' y
+    'VENTA_MAYORISTA'. NO crear ni migrar esta tabla desde el código.
+    """
+    __tablename__ = "inventory_movements"
 
-	id: Mapped[int] = mapped_column(Integer, primary_key=True)
-	product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"), nullable=False)
-	responsable_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
-	movement_type: Mapped[str] = mapped_column(String(30), nullable=False)
-	quantity: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-	reason: Mapped[Optional[str]] = mapped_column(Text)
-	unit_sold_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-	unit_cost_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-	waste_type: Mapped[Optional[str]] = mapped_column(String(100))
-	sale_group_id: Mapped[Optional[int]] = mapped_column(ForeignKey("sales.id", ondelete="RESTRICT"))
-	supplier_name: Mapped[Optional[str]] = mapped_column(String(255))
-	folio: Mapped[Optional[str]] = mapped_column(String(50))
-	unit_price_usd: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-	exchange_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4))
-	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
-
-	product = relationship("Producto")
-	responsable = relationship("Usuario")
+    id = Column(BigInteger, primary_key=True)
+    product_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    movement_type = Column(String(15), nullable=False)
+    quantity = Column(Numeric(10, 3), nullable=False)
+    reason = Column(String(150))
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    unit_sold_price = Column(Numeric)
+    unit_cost_price = Column(Numeric)
+    batch_code = Column(String)
+    waste_type = Column(String)
+    sale_group_id = Column(String)
+    origin_warehouse_id = Column(Integer)
+    destination_warehouse_id = Column(Integer)
+    currency = Column(String)
+    exchange_rate = Column(Numeric)
+    destination_country = Column(String)

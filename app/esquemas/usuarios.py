@@ -1,39 +1,46 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import EmailStr, Field
+from pydantic import BaseModel
 
-from app.esquemas.comun import CamelModel
+from app.servicios.usuarios_reglas import rol_para_front
 
-RolAPI = Literal["admin", "vendedor", "taller"]
+Rol = Literal["admin", "vendedor", "taller"]
 
 
-class UsuarioPublico(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"id": "7", "fullName": "Ana Torres", "email": "ana@importexportpasion.com", "role": "admin", "isActive": True, "createdAt": "2026-09-29T15:30:00Z"}]}}
-
+class UsuarioOut(BaseModel):
+    """Igual a `User` en frontend/src/features/usuarios/types.ts."""
     id: str
-    full_name: str
-    email: EmailStr
-    role: RolAPI
-    is_active: bool
-    created_at: datetime
+    fullName: str
+    email: str
+    role: Rol
+    isActive: bool
+    createdAt: datetime | None
 
 
-class UsuarioCrear(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"fullName": "Ana Torres", "email": "ana@importexportpasion.com", "role": "admin", "password": "secreto123", "isActive": True}]}}
+class UsuarioCrear(BaseModel):
+    """Solo comprueba tipos; las reglas de negocio están en servicios/usuarios_reglas.py."""
+    fullName: str
+    email: str
+    role: Rol
+    password: str
+    isActive: bool = True
 
-    full_name: str = Field(min_length=3)
-    email: EmailStr
-    role: RolAPI
-    password: str = Field(min_length=6)
-    is_active: bool = True
+
+class UsuarioActualizar(BaseModel):
+    fullName: str
+    email: str
+    role: Rol
+    isActive: bool
+    password: str | None = None      # vacío o ausente = no cambiar la contraseña
 
 
-class UsuarioActualizar(CamelModel):
-    model_config = {"json_schema_extra": {"examples": [{"fullName": "Ana Torres", "email": "ana@importexportpasion.com", "role": "vendedor", "isActive": True, "password": "nueva-clave"}]}}
-
-    full_name: str = Field(min_length=3)
-    email: EmailStr
-    role: RolAPI
-    is_active: bool
-    password: str | None = None
+def usuario_a_out(u) -> UsuarioOut:
+    return UsuarioOut(
+        id=str(u.id),
+        fullName=u.full_name,
+        email=u.email,
+        role=rol_para_front(u.role),
+        isActive=u.is_active is not False,    # NULL se trata como activo
+        createdAt=u.created_at,
+    )

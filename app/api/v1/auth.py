@@ -1,40 +1,45 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import usuario_actual
-from app.api.v1.user import autenticar_usuario
+from app.api.v1.user import (
+    a_usuario_sesion,
+    autenticar_usuario,
+    obtener_usuario_por_id,
+)
 from app.bd.session import get_db
-from app.core.seguridad import crear_token
-from app.esquemas.login import LoginRequest
-from app.modelo.usuarios import Usuario
+from app.core.seguridad import crear_token, obtener_usuario_actual
+from app.esquemas.login import LoginRequest, LoginResponse, UsuarioSesion
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
-
-
-def usuario_respuesta(usuario: Usuario) -> dict[str, str]:
-    return {"id": str(usuario.id), "nombre": usuario.full_name, "email": usuario.email, "rol": usuario.role.lower()}
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post(
-    "/login",
-    summary="Iniciar sesión",
-    description="Autentica al usuario y devuelve un token JWT para acceder a los recursos protegidos.",
-    responses={401: {"description": 'Credenciales inválidas. Formato: {"detail": "Email o contraseña incorrectos"}.'}, 403: {"description": 'Cuenta inactiva. Formato: {"detail": "texto"}.'}, 422: {"description": 'Datos inválidos. Formato: {"detail": "texto"}.'}},
-)
+@router.post("/login", response_model=LoginResponse)
 async def login(datos: LoginRequest, db: AsyncSession = Depends(get_db)):
-    usuario = await autenticar_usuario(db, datos.email.lower(), datos.password)
-    if usuario is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email o contraseña incorrectos")
+    """Valida email y contraseña y devuelve el token JWT con el usuario."""
+    usuario = await autenticar_usuario(db, datos.email, datos.password)
+
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
+
+    # Se revisa DESPUÉS de la contraseña para no revelar si una cuenta existe.
     if not usuario.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tu cuenta está inactiva. Contactá a un administrador.")
-    return {"accessToken": crear_token({"id": usuario.id, "role": usuario.role}), "tokenType": "bearer", "usuario": usuario_respuesta(usuario)}
+        raise HTTPException(status_code=403, detail="Usuario inactivo")
+
+    sesion = a_usuario_sesion(usuario)
+    token = crear_token({"id": usuario.id, "role": usuario.role})
+    return LoginResponse(accessToken=token, usuario=sesion)
 
 
-@router.get(
-    "/me",
-    summary="Consultar usuario actual",
-    description="Devuelve los datos del usuario asociado al token JWT enviado en la petición.",
-    responses={401: {"description": 'Token inválido o expirado. Formato: {"detail": "texto"}.'}},
-)
-async def me(usuario: Usuario = Depends(usuario_actual)):
-    return usuario_respuesta(usuario)
+@router.get("/me", response_model=UsuarioSesion)
+async def me(
+    token_datos: dict = Depends(obtener_usuario_actual),
+    db: AsyncSession = Depends(get_db),
+):
+    """Devuelve el usuario del token. El front lo usa para validar la sesión al cargar."""
+    usuario = await obtener_usuario_por_id(db, token_datos.get("id"))
+
+    # Si ya no existe o fue desactivado, la sesión deja de ser válida.
+    if not usuario or not usuario.is_active:
+        raise HTTPException(status_code=401, detail="Sesión no válida, vuelve a iniciar sesión")
+
+    return a_usuario_sesion(usuario)

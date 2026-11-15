@@ -3,20 +3,9 @@ from time import perf_counter
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import RequestValidationError
-
-from app.api.v1.auth import router as auth_router
-from app.api.v1.catalogos import router as catalogos_router
-from app.api.v1.productos import router as productos_router
-from app.api.v1.usuarios import router as usuarios_router
-from app.api.v1.lotes import router as lotes_router
-from app.api.v1.inventario import router as inventario_router
-from app.api.v1.movimientos import router as movimientos_router
-from app.api.v1.ventas import router as ventas_router
-from app.api.v1.comercio_exterior import router as comercio_exterior_router
-from app.api.v1.dashboard import router as dashboard_router
+ 
+from app.api.v1 import analisis, auth, productos, dashboard, movimientos, usuarios, almacenes, ventas, inventario, comercio_exterior
 from app.core.config import CORS_ORIGINS
-from app.core.errores import ErrorDeNegocio, manejar_error_de_negocio, manejar_error_no_controlado, manejar_http_exception, manejar_validacion
 
  
 logging.basicConfig(
@@ -72,23 +61,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
  
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(catalogos_router, prefix="/api/v1")
-app.include_router(productos_router, prefix="/api/v1")
-app.include_router(usuarios_router, prefix="/api/v1")
-app.include_router(lotes_router, prefix="/api/v1")
-app.include_router(inventario_router, prefix="/api/v1")
-app.include_router(movimientos_router, prefix="/api/v1")
-app.include_router(ventas_router, prefix="/api/v1")
-app.include_router(comercio_exterior_router, prefix="/api/v1")
-app.include_router(dashboard_router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(analisis.router, prefix="/api/v1")
+app.include_router(productos.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(dashboard.router, prefix="/api/v1")
+app.include_router(movimientos.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(usuarios.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(almacenes.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(ventas.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(inventario.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(comercio_exterior.router, prefix="/api/v1")   # ← línea nueva
 
- 
- 
-@app.get(
-    "/",
-    summary="Comprobar disponibilidad",
-    description="Confirma que la API de Import & Export Pasión está funcionando.",
-)
+@app.get("/")
 async def raiz():
     return {"mensaje": "El backend está funcionando"}

@@ -1,30 +1,41 @@
-from __future__ import annotations
+from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, Text
+from sqlalchemy.sql import func
 
-from datetime import datetime
-from decimal import Decimal
-from typing import Optional
+from app.bd.session import Base
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.bd.base import Base
+class Categoria(Base):
+    """Tabla real `categories` (ya existe). NO crear ni migrar desde el código."""
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer)
+    name = Column(String, nullable=False)
+    description = Column(Text)
 
 
 class Producto(Base):
-	__tablename__ = "products"
+    """Tabla real `products` (ya existe). NO crear ni migrar desde el código."""
+    __tablename__ = "products"
 
-	id: Mapped[int] = mapped_column(Integer, primary_key=True)
-	category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
-	sku: Mapped[str] = mapped_column(String(50), nullable=False)
-	name: Mapped[str] = mapped_column(String(150), nullable=False)
-	unit_type: Mapped[str] = mapped_column(String(20), nullable=False)
-	sale_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-	cost_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-	current_stock: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-	min_stock_alert: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-	is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
-	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    id = Column(Integer, primary_key=True)
+    category_id = Column(Integer, nullable=False)
+    sku = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    unit_type = Column(String, nullable=False)
+    sale_price = Column(Numeric, nullable=False)
+    cost_price = Column(Numeric)
+    current_stock = Column(Numeric, nullable=False)
+    min_stock_alert = Column(Numeric, nullable=False)
+    is_active = Column(Boolean)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-	category = relationship("Categoria")
+class StockPorAlmacen(Base):
+    """Tabla real `product_stock_by_warehouse` (ya existe). La mantiene el trigger de los movimientos."""
+    __tablename__ = "product_stock_by_warehouse"
 
-	__table_args__ = (Index("ix_products_sku_lower", func.lower(sku), unique=True),)
+    id = Column(Integer, primary_key=True)
+    product_id = Column(Integer, nullable=False)
+    warehouse_id = Column(Integer, nullable=False)
+    stock = Column(Numeric, nullable=False)
+    updated_at = Column(DateTime(timezone=True))

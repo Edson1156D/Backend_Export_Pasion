@@ -2,17 +2,66 @@ import logging
 from time import perf_counter
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
- 
-from app.api.v1 import analisis, auth, productos, dashboard, movimientos, usuarios, almacenes, ventas, inventario, comercio_exterior
+from fastapi.responses import JSONResponse
+
+from app.api.v1 import (
+    almacenes,
+    analisis,
+    auth,
+    comercio_exterior,
+    dashboard,
+    inventario,
+    movimientos,
+    productos,
+    usuarios,
+    ventas,
+)
 from app.core.config import CORS_ORIGINS
 
- 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger("eip.backend")
+
+
+class ErrorDeNegocio(Exception):
+    def __init__(self, mensaje: str, codigo_estado: int = 400):
+        self.mensaje = mensaje
+        self.codigo_estado = codigo_estado
+        super().__init__(mensaje)
+
+
+async def manejar_http_exception(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+async def manejar_error_de_negocio(request: Request, exc: ErrorDeNegocio):
+    return JSONResponse(
+        status_code=exc.codigo_estado,
+        content={"detail": exc.mensaje},
+    )
+
+
+async def manejar_validacion(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
+
+async def manejar_error_no_controlado(request: Request, exc: Exception):
+    logger.exception("Error interno no controlado en %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Error interno del servidor"},
+    )
+
 
 app = FastAPI(
     title="Import & Export Pasión API",
@@ -32,6 +81,7 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
 app.add_exception_handler(HTTPException, manejar_http_exception)
 app.add_exception_handler(ErrorDeNegocio, manejar_error_de_negocio)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
@@ -60,17 +110,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
- 
+
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(analisis.router, prefix="/api/v1")
-app.include_router(productos.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(productos.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
-app.include_router(movimientos.router, prefix="/api/v1")   # ← línea nueva
-app.include_router(usuarios.router, prefix="/api/v1")   # ← línea nueva
-app.include_router(almacenes.router, prefix="/api/v1")   # ← línea nueva
-app.include_router(ventas.router, prefix="/api/v1")   # ← línea nueva
-app.include_router(inventario.router, prefix="/api/v1")   # ← línea nueva
-app.include_router(comercio_exterior.router, prefix="/api/v1")   # ← línea nueva
+app.include_router(movimientos.router, prefix="/api/v1")
+app.include_router(usuarios.router, prefix="/api/v1")
+app.include_router(almacenes.router, prefix="/api/v1")
+app.include_router(ventas.router, prefix="/api/v1")
+app.include_router(inventario.router, prefix="/api/v1")
+app.include_router(comercio_exterior.router, prefix="/api/v1")
+
 
 @app.get("/")
 async def raiz():

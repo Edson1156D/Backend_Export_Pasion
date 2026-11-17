@@ -3,11 +3,24 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from passlib.context import CryptContext
 from app.core.config import JWT_ALGORITHM, JWT_EXPIRE_MINUTES, SECRET_KEY
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def verificar_contrasena(contrasena_plana: str, contrasena_hasheada: str) -> bool:
+    return pwd_context.verify(contrasena_plana, contrasena_hasheada)
+
+
+def hashear_contrasena(contrasena: str) -> str:
+    return pwd_context.hash(contrasena)
+
 
 # Le dice a FastAPI que espere el token como "Bearer <token>",
 # y en /docs mostrará un simple campo de texto para pegarlo.
 seguridad = HTTPBearer(auto_error=False)
+
 
 def crear_token(datos: dict) -> str:
     datos_a_codificar = datos.copy()
@@ -31,8 +44,6 @@ def obtener_usuario_actual(credenciales: HTTPAuthorizationCredentials | None = D
     Lee el token que viene en la petición y devuelve sus datos (id, rol).
     Si el token no es válido o expiró, rechaza la petición con error 401.
     """
-    # Sin header Authorization devolvemos 401 (HTTPBearer por defecto daría 403),
-    # que es lo que el front espera para redirigir al login.
     if credenciales is None:
         raise HTTPException(status_code=401, detail="No autenticado")
 
@@ -64,6 +75,7 @@ def requiere_rol(rol_permitido: str):
 
     return verificar
 
+
 def requiere_roles(*roles_permitidos: str):
     """
     Como requiere_rol, pero deja pasar a cualquiera de los roles indicados:
@@ -77,7 +89,7 @@ def requiere_roles(*roles_permitidos: str):
 
     return verificar
 
-# Prueba rápida: genera un token de ejemplo y lo vuelve a leer.
+
 if __name__ == "__main__":
     token_prueba = crear_token({"id": 5, "role": "ADMIN"})
     print("Token generado:")

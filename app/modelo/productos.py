@@ -1,17 +1,7 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String
 from sqlalchemy.sql import func
 
 from app.bd.base import Base
-
-
-class Categoria(Base):
-    """Tabla real `categories` (ya existe). NO crear ni migrar desde el código."""
-    __tablename__ = "categories"
-
-    id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer)
-    name = Column(String, nullable=False)
-    description = Column(Text)
 
 
 class Producto(Base):
@@ -29,6 +19,7 @@ class Producto(Base):
     min_stock_alert = Column(Numeric, nullable=False)
     is_active = Column(Boolean)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class StockPorAlmacen(Base):
     """Tabla real `product_stock_by_warehouse` (ya existe). La mantiene el trigger de los movimientos."""

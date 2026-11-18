@@ -2,7 +2,6 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String
 from sqlalchemy.sql import func
 
 from app.bd.base import Base
-from app.modelo.categorias import Categoria  # noqa: F401
 
 
 class Producto(Base):

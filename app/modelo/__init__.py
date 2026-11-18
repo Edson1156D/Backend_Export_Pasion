@@ -1,0 +1,15 @@
+from app.modelo import (  # noqa: F401
+    almacenes,
+    categorias,
+    comercio_exterior,
+    contadores,
+    entradas,
+    lotes,
+    mermas,
+    movimientos,
+    productos,
+    proveedores,
+    socios_comerciales,
+    usuarios,
+    ventas,
+)

@@ -14,7 +14,8 @@ from app.esquemas.productos import (
     producto_a_out,
 )
 from app.modelo.movimientos import MovimientoInventario
-from app.modelo.productos import Categoria, Producto, StockPorAlmacen
+from app.modelo.categorias import Categoria
+from app.modelo.productos import Producto, StockPorAlmacen
 from app.servicios import productos_reglas as reglas
 from decimal import Decimal
 

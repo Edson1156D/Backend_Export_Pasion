@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+import app.modelo  # noqa: F401
 from app.api.v1 import (
     almacenes,
     analisis,

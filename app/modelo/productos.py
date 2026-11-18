@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.sql import func
 
-from app.bd.session import Base
+from app.bd.base import Base
 
 
 class Categoria(Base):

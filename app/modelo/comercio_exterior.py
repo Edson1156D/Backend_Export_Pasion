@@ -8,6 +8,9 @@ from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Tex
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.bd.base import Base
+from app.modelo.productos import Producto
+from app.modelo.socios_comerciales import SocioComercial
+from app.modelo.usuarios import Usuario
 
 
 class OperacionComercioExterior(Base):
@@ -28,8 +31,8 @@ class OperacionComercioExterior(Base):
     responsable_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
-    partner = relationship("SocioComercial")
-    responsable = relationship("Usuario")
+    partner = relationship(SocioComercial)
+    responsable = relationship(Usuario)
     lines = relationship("LineaComercioExterior", back_populates="operation")
 
 
@@ -47,4 +50,4 @@ class LineaComercioExterior(Base):
     subtotal_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
     operation = relationship("OperacionComercioExterior", back_populates="lines")
-    product = relationship("Producto")
+    product = relationship(Producto)
